@@ -30,6 +30,12 @@
             AC: '#43A047',
             WA: '#D50000',
         },
+        ContestMode: {
+            Normal: 'Normal',
+            Lockout: 'Lockout',
+            Training: 'Training',
+            None: 'None',
+        },
         ProblemTableColumnLength: 3,
         TableSelector: 'table.table-sm.table-bordered.table-striped',
     };
@@ -40,6 +46,20 @@
 
     function isContestPage() {
         return window.location.hash.startsWith('#/contest/show/');
+    }
+
+    function extractContestMode(text) {
+        const prefix = "Mode: ";
+        const startIndex = text.indexOf(prefix) + prefix.length;
+        const modeText = text.slice(startIndex);
+        return Config.ContestMode[modeText] || Config.ContestMode.None;
+    }
+
+    function getContestMode() {
+        const contestModeBadgeElement = document.querySelector('span.badge.badge-secondary');
+        if (!contestModeBadgeElement) { return null; }
+
+        return extractContestMode(contestModeBadgeElement.innerText);
     }
 
     function getActiveTab() {
@@ -142,6 +162,9 @@
     }
 
     function ColorizeProblemCells() {
+        const contestMode = getContestMode();
+        if (contestMode !== Config.ContestMode.Normal) { return; }
+
         const activeTab = getActiveTab();
         if (activeTab === Config.TabType.Problems) {
             colorizeProblemsRows();
