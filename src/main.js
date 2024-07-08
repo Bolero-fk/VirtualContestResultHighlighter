@@ -28,6 +28,7 @@
         },
         SVGFillColors: {
             AC: '#43A047',
+            WA: '#D50000',
         },
         ProblemTableColumnLength: 3,
         TableSelector: 'table.table-sm.table-bordered.table-striped',
@@ -47,9 +48,34 @@
         return urlParams.get('activeTab');
     }
 
+    function hasResultCell(cells) {
+        return cells.length !== Config.ProblemTableColumnLength;
+    }
+
+    function isAcSvg(svg) {
+        const polygon = svg.querySelector('polygon');
+        return polygon?.getAttribute('fill') === Config.SVGFillColors.AC;
+    };
+
+    function isWaSvg(svg) {
+        const path = svg.querySelector('path');
+        return path?.getAttribute('fill') === Config.SVGFillColors.WA;
+    };
+
+    function svgToResultType(svg) {
+        if (isAcSvg(svg)) {
+            return Config.ResultType.AC;
+        }
+        else if (isWaSvg(svg)) {
+            return Config.ResultType.WA;
+        }
+
+        return Config.ResultType.None;
+    }
+
     function getResultInProblemsTab(row) {
         const cells = row.querySelectorAll('td');
-        if (cells.length !== Config.ProblemTableColumnLength) {
+        if (hasResultCell(cells)) {
             return Config.ResultType.None;
         }
 
@@ -59,16 +85,7 @@
             return Config.ResultType.None;
         }
 
-        const polygon = svg.querySelector('polygon');
-        if (polygon) {
-            if (polygon.getAttribute('fill') === Config.SVGFillColors.AC) {
-                return Config.ResultType.AC;
-            } else {
-                return Config.ResultType.WA;
-            }
-        }
-
-        return Config.ResultType.None;
+        return svgToResultType(svg);
     }
 
     function colorizeProblemsRows() {
@@ -90,7 +107,8 @@
             return Config.ResultType.None
         }
         else if (problemStatuses.length == 2) {
-            if (problemStatuses[1].innerText === '-') {
+            const acTime = problemStatuses[1].innerText;
+            if (acTime === '-') {
                 return Config.ResultType.WA;
             }
             else {
@@ -124,22 +142,21 @@
         });
     }
 
+    function ColorizeProblemCells() {
+        const activeTab = getActiveTab();
+        if (activeTab === Config.TabType.Problems) {
+            colorizeProblemsRows();
+        }
+        else if (activeTab === Config.TabType.Standings) {
+            colorizeStandingsRows();
+        }
+    }
+
     function observePageChanges() {
         const targetNode = document.body;
         const config = { childList: true, subtree: true };
 
-        const callback = function (mutationsList, observer) {
-            const activeTab = getActiveTab();
-
-            if (activeTab === Config.TabType.Problems) {
-                colorizeProblemsRows();
-            }
-            else if (activeTab === Config.TabType.Standings) {
-                colorizeStandingsRows();
-            }
-        };
-
-        const observer = new MutationObserver(callback);
+        const observer = new MutationObserver(ColorizeProblemCells);
         observer.observe(targetNode, config);
     }
 
