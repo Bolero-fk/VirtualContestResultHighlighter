@@ -26,7 +26,7 @@
             WA: '#FFDD99',
             None: 'transparent',
         },
-        SVGFillColors: {
+        SVGFillColor: {
             AC: '#43A047',
             WA: '#D50000',
         },
@@ -36,8 +36,25 @@
             Training: 'Training',
             None: 'None',
         },
-        ProblemTableColumnLength: 3,
-        TableSelector: 'table.table-sm.table-bordered.table-striped',
+        Selector: {
+            ProblemTable: 'table.table-sm.table-bordered.table-striped',
+            ContestModeBadge: 'span.badge.badge-secondary',
+            ActiveTab: 'a.nav-link.active',
+            Figure: 'svg',
+            ProblemStatusRow: 'tbody tr',
+            ProblemStatusCell: 'td',
+            ProblemStatus: 'p',
+            Polygon: 'polygon',
+            Path: 'path',
+        },
+        Attribute: {
+            Fill: 'fill'
+        },
+        virtualContestHashPrefix: '#/contest/show/',
+        contestBadgePrefix: 'Mode: ',
+        noneAcTime: '-',
+        ProblemTableColumnLengthIfJoined: 3,
+        NumberOfStatusIfSubmitted: 2,
     };
 
     function getResultColor(resultType) {
@@ -45,40 +62,44 @@
     }
 
     function isContestPage() {
-        return window.location.hash.startsWith('#/contest/show/');
+        return window.location.hash.startsWith(Config.virtualContestHashPrefix);
     }
 
     function extractContestMode(text) {
-        const prefix = "Mode: ";
+        const prefix = Config.contestBadgePrefix;
         const startIndex = text.indexOf(prefix) + prefix.length;
         const modeText = text.slice(startIndex);
         return Config.ContestMode[modeText] || Config.ContestMode.None;
     }
 
     function getContestMode() {
-        const contestModeBadgeElement = document.querySelector('span.badge.badge-secondary');
+        const contestModeBadgeElement = document.querySelector(Config.Selector.ContestModeBadge);
         if (!contestModeBadgeElement) { return null; }
 
         return extractContestMode(contestModeBadgeElement.innerText);
     }
 
     function getActiveTab() {
-        const activeTabElement = document.querySelector('a.nav-link.active');
+        const activeTabElement = document.querySelector(Config.Selector.ActiveTab);
         return activeTabElement?.innerText;
     }
 
     function hasResultCell(cells) {
-        return cells.length !== Config.ProblemTableColumnLength;
+        return cells.length !== Config.ProblemTableColumnLengthIfJoined;
     }
 
+    function getFillColor(filledFigure) {
+        return filledFigure?.getAttribute(Config.Attribute.Fill)
+    };
+
     function isAcSvg(svg) {
-        const polygon = svg.querySelector('polygon');
-        return polygon?.getAttribute('fill') === Config.SVGFillColors.AC;
+        const polygon = svg.querySelector(Config.Selector.Polygon);
+        return getFillColor(polygon) === Config.SVGFillColor.AC;
     };
 
     function isWaSvg(svg) {
-        const path = svg.querySelector('path');
-        return path?.getAttribute('fill') === Config.SVGFillColors.WA;
+        const path = svg.querySelector(Config.Selector.Path);
+        return getFillColor(path) === Config.SVGFillColor.WA;
     };
 
     function svgToResultType(svg) {
@@ -93,13 +114,13 @@
     }
 
     function getResultInProblemsTab(row) {
-        const cells = row.querySelectorAll('td');
+        const cells = row.querySelectorAll(Config.Selector.ProblemStatusCell);
         if (hasResultCell(cells)) {
             return Config.ResultType.None;
         }
 
-        const resultCell = cells[Config.ProblemTableColumnLength - 1];
-        const svg = resultCell.querySelector('svg');
+        const resultCell = cells[Config.ProblemTableColumnLengthIfJoined - 1];
+        const svg = resultCell.querySelector(Config.Selector.Figure);
         if (!svg) {
             return Config.ResultType.None;
         }
@@ -108,9 +129,9 @@
     }
 
     function colorizeProblemsRows() {
-        const problemsTable = document.querySelector(Config.TableSelector);
+        const problemsTable = document.querySelector(Config.Selector.ProblemTable);
         if (problemsTable) {
-            const rows = problemsTable.querySelectorAll('tbody tr');
+            const rows = problemsTable.querySelectorAll(Config.Selector.ProblemStatusRow);
             rows.forEach((row) => {
                 const problemResult = getResultInProblemsTab(row);
                 if (problemResult && problemResult != Config.ResultType.None) {
@@ -121,13 +142,10 @@
     }
 
     function getResultInStandingsTab(cell) {
-        const problemStatuses = cell.querySelectorAll('p');
-        if (problemStatuses.length == 1) {
-            return Config.ResultType.None
-        }
-        else if (problemStatuses.length == 2) {
+        const problemStatuses = cell.querySelectorAll(Config.Selector.ProblemStatus);
+        if (problemStatuses.length == Config.NumberOfStatusIfSubmitted) {
             const acTime = problemStatuses[1].innerText;
-            if (acTime === '-') {
+            if (acTime === Config.noneAcTime) {
                 return Config.ResultType.WA;
             }
             else {
@@ -139,17 +157,17 @@
     }
 
     function colorizeStandingsRows() {
-        const standingsTable = document.querySelector(Config.TableSelector);
+        const standingsTable = document.querySelector(Config.Selector.ProblemTable);
         if (!standingsTable) {
             return;
         }
 
-        const rows = standingsTable.querySelectorAll('tbody tr');
+        const rows = standingsTable.querySelectorAll(Config.Selector.ProblemStatusRow);
         rows.forEach((row, index) => {
             // 最後の行は最速AC者用の行なので飛ばす
             if (index == rows.length - 1) { return; }
 
-            const cells = row.querySelectorAll('td');
+            const cells = row.querySelectorAll(Config.Selector.ProblemStatusCell);
             cells.forEach((cell, index) => {
                 // 最初のセルは総スコアなので飛ばす
                 if (index == 0) { return; }
