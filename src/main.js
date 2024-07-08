@@ -26,13 +26,11 @@
             WA: '#FFDD99',
             None: 'transparent',
         },
-        Selectors: {
-            ProblemsTable: 'table.table-sm.table-bordered.table-striped',
-        },
         SVGFillColors: {
             AC: '#43A047',
         },
-        ProblemTableColumnLength: 3
+        ProblemTableColumnLength: 3,
+        TableSelector: 'table.table-sm.table-bordered.table-striped',
     };
 
     function getResultColor(resultType) {
@@ -74,7 +72,7 @@
     }
 
     function colorizeProblemsRows() {
-        const problemsTable = document.querySelector(Config.Selectors.ProblemsTable);
+        const problemsTable = document.querySelector(Config.TableSelector);
         if (problemsTable) {
             const rows = problemsTable.querySelectorAll('tbody tr');
             rows.forEach((row) => {
@@ -84,6 +82,46 @@
                 }
             });
         }
+    }
+
+    function getResultInStandingsTab(cell) {
+        const problemStatuses = cell.querySelectorAll('p');
+        if (problemStatuses.length == 1) {
+            return Config.ResultType.None
+        }
+        else if (problemStatuses.length == 2) {
+            if (problemStatuses[1].innerText === '-') {
+                return Config.ResultType.WA;
+            }
+            else {
+                return Config.ResultType.AC;
+            }
+        }
+
+        return Config.ResultType.None;
+    }
+
+    function colorizeStandingsRows() {
+        const standingsTable = document.querySelector(Config.TableSelector);
+        if (!standingsTable) {
+            return;
+        }
+
+        const rows = standingsTable.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            // 最後の行は最速AC者用の行なので飛ばす
+            if (index == rows.length - 1) { return; }
+
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                // 最初のセルは総スコアなので飛ばす
+                if (index == 0) { return; }
+                const problemResult = getResultInStandingsTab(cell);
+                if (problemResult && problemResult != Config.ResultType.None) {
+                    cell.style.backgroundColor = getResultColor(problemResult);
+                }
+            });
+        });
     }
 
     function observePageChanges() {
@@ -97,6 +135,7 @@
                 colorizeProblemsRows();
             }
             else if (activeTab === Config.TabType.Standings) {
+                colorizeStandingsRows();
             }
         };
 
