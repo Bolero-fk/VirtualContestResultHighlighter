@@ -4,6 +4,7 @@
 // @version      0.1
 // @description  Highlights problem rows in AtCoder Problems' Virtual Contests based on results.
 // @author       Bolero
+// @license      MIT
 // @match        https://kenkoooo.com/atcoder/*
 // @grant        none
 // ==/UserScript==
